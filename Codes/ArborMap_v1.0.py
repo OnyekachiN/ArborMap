@@ -129,6 +129,7 @@ def KNN_SNN(k, res, sparse_mat, emb_indx,jobs =1, SNN_prune=None):
     return df
 
 def make_UMAP(sparse_mat, data_df, vmax, cmap_col, k, folder, dims, spread_n = 1, n_neighbors = 30, jobs=1, res = None):
+    print('making umap')
     if spread_n != 1:
         spread_n = spread_n
     if n_neighbors !=30:
@@ -184,7 +185,7 @@ def main():
     parser.add_argument('--SNN_prune',type =float, help = 'How much to prune the SNN algorithm')
     parser.add_argument("--output_dir", type=str, default="./data",help="Path to the output folder (default: ./data)")
     parser.add_argument("file_name_clusters", type=str, default="./data/louvain_KNN_SNN_clusters.csv",help="Name of output file (default: ./data/louvain_KNN_SNN_clusters.csv)")
-    parser.add_argument("file_name_umap", type=str, default="./data/louvain_KNN_SNN_clusters.csv",help="Name of output file (default: ./data/louvain_KNN_SNN_clusters.csv)")
+    parser.add_argument("file_name_umap", type=str, default="./data/ArborMAP_UMAP.png",help="Name of output UMAP figure (default: ./data/ArborMAP_UMAP.png)")
 
 
     args = parser.parse_args()
@@ -219,7 +220,6 @@ def main():
     my_cmap = ListedColormap(sns.color_palette(color).as_hex()) # type: ignore
     my_cmap.colors
 
-    print('making umap')
     start_computation = perf_counter()
     embedding = make_UMAP(Ajc_mtx, df, number, my_cmap, k, args.output_dir, dims, n_neighbors=30, res = res, jobs =12)
     end_computation = perf_counter()

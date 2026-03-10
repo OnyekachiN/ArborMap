@@ -80,15 +80,19 @@ def select_K_res(sparse_mat, embedding_sct, embedding_adt, jobs =1,SNN_prune=Non
             
             if len(singleton_clusters) > 0:
                 clusters = df.loc[~df['cluster'].isin(singleton_clusters), 'cluster'].unique()
-                A = nx.to_pandas_adjacency(G, weight='weight')
+                #A = nx.to_pandas_adjacency(G, weight='weight')
                 new_assignments = {}
 
-                # Convert adjacency matrix to NumPy array (much faster indexing)
-                A_np = A.values
-                nodes = np.array(A.index)  # numeric node labels
+                # Convert network to sparse array matrix (much faster indexing and memory demand)
+                nodes = list(G.nodes())
+                A = nx.to_scipy_sparse_array(G, nodelist = nodes,weight='weight', format='csr')
+                print(type(A))
+
+                #A_np = A.values
+                #nodes = np.array(A.index)  # numeric node labels
                 node_to_pos = {node: i for i, node in enumerate(nodes)}  # map node ID → row/col index
 
-                # Precompute cluster → node indices mapping
+                # Precompute cluster - node indices mapping
                 cluster_to_nodes = {
                     clust: df.loc[df['cluster'] == clust, 'node'].map(node_to_pos).values # type: ignore
                     for clust in clusters
@@ -102,7 +106,7 @@ def select_K_res(sparse_mat, embedding_sct, embedding_adt, jobs =1,SNN_prune=Non
 
                     # Compute mean connectivity in a vectorized way
                     connectivity = {
-                        clust: A_np[sing_pos, clust_indices].mean() if len(clust_indices) > 0 else 0
+                        clust: A[sing_pos, clust_indices].mean() if len(clust_indices) > 0 else 0
                         for clust, clust_indices in cluster_to_nodes.items()
                     }
                     best_cluster = max(connectivity, key=connectivity.get) # type: ignore

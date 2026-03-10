@@ -25,10 +25,11 @@ def save_dataframe(output_folder, df, file_name):
     # Ensure the directory exists
     os.makedirs(output_folder, exist_ok=True)
     output_path = os.path.join(output_folder, str(file_name))
-    df.to_csv(output_path, index=False)
+    df.to_csv(output_path, index=True)
     print(f"File saved to: {output_path}")
 
 def KNN_SNN(k, res, sparse_mat, emb_indx,jobs =1, SNN_prune=None):
+    print('starting KNN model')
     snn_prune_val = 1/15 if SNN_prune is None else SNN_prune
     # Compute KNN graph (on precomputed distances) 
     nn = NearestNeighbors(n_neighbors=k, metric='cosine', algorithm='brute', n_jobs=jobs)
@@ -74,15 +75,18 @@ def KNN_SNN(k, res, sparse_mat, emb_indx,jobs =1, SNN_prune=None):
 
     if len(singleton_clusters) > 0:
         clusters = df.loc[~df['cluster'].isin(singleton_clusters), 'cluster'].unique()
-        A = nx.to_pandas_adjacency(G, weight='weight')
+        #A = nx.to_pandas_adjacency(G, weight='weight')
         new_assignments = {}
 
-        # Convert adjacency matrix to NumPy array (much faster indexing)
-        A_np = A.values
-        nodes = np.array(A.index)  # numeric node labels
+        # Convert network to sparse array matrix (much faster indexing and memory demand)
+        #A_np = A.values
+        nodes = list(G.nodes())
+        A = nx.to_scipy_sparse_array(G, nodelist = nodes,weight='weight', format='csr')
+        print(type(A))
+        #nodes = np.array(A.index)  # numeric node labels
         node_to_pos = {node: i for i, node in enumerate(nodes)}  # map node ID → row/col index
 
-        # Precompute cluster → node indices mapping
+        # Precompute cluster - node indices mapping
         cluster_to_nodes = {
             clust: df.loc[df['cluster'] == clust, 'node'].map(node_to_pos).values # type: ignore
             for clust in clusters
@@ -96,7 +100,7 @@ def KNN_SNN(k, res, sparse_mat, emb_indx,jobs =1, SNN_prune=None):
 
             # Compute mean connectivity in a vectorized way
             connectivity = {
-                clust: A_np[sing_pos, clust_indices].mean() if len(clust_indices) > 0 else 0
+                clust: A[sing_pos, clust_indices].mean() if len(clust_indices) > 0 else 0
                 for clust, clust_indices in cluster_to_nodes.items()
             }
             best_cluster = max(connectivity, key=connectivity.get) # type: ignore
@@ -163,6 +167,9 @@ def make_UMAP(sparse_mat, data_df, vmax, cmap_col, k, folder, dims, spread_n = 1
     y_min, y_max = ax.get_ylim()
     print(f' x min = {x_min}, x max ={x_max}', sep = '/')
     print(f' y min = {y_min}, y max = {y_max}', sep = '/')
+    embedding = pd.DataFrame(embedding)
+    embedding.columns = ['UMAP_1', 'UMAP_2']
+    embedding.index = data_df.index
     return embedding
 
 def main():
@@ -191,7 +198,7 @@ def main():
     # Time the fitting process
     print('starting ensemble tree model')
     start_computation = perf_counter()
-    rf_classifier = RandomTreesEmbedding(n_estimators= 1000, random_state = 1, n_jobs=10)
+    rf_classifier = RandomTreesEmbedding(n_estimators= 1000, random_state = 1, n_jobs=12)
     rf_classifier.fit(Embedding_data)
     Ajc_mtx = rf_classifier.transform(Embedding_data)
     print(f"Type of A: {type(Ajc_mtx)}") 
@@ -200,7 +207,6 @@ def main():
     k = args.K
     res = args.resolution
 
-    print('starting KNN model')
     df = KNN_SNN(k, res, Ajc_mtx, Embedding_data, jobs = 10)
     end_computation = perf_counter()
     print(f"Computation time for ensemble and knn algorithm is: {end_computation - start_computation:.4f} seconds")
@@ -215,7 +221,7 @@ def main():
 
     print('making umap')
     start_computation = perf_counter()
-    embedding = make_UMAP(Ajc_mtx, df, number, my_cmap, k, args.output_dir, dims, n_neighbors=30, res = res, jobs =10)
+    embedding = make_UMAP(Ajc_mtx, df, number, my_cmap, k, args.output_dir, dims, n_neighbors=30, res = res, jobs =12)
     end_computation = perf_counter()
     print(f"Computation time for UMAP is: {end_computation - start_computation:.4f} seconds")
 

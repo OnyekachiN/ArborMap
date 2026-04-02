@@ -9,6 +9,7 @@ from sklearn.neighbors import NearestNeighbors
 import matplotlib.pyplot as plt
 import umap.umap_ as umap
 import seaborn as sns
+from scipy import sparse
 from matplotlib.colors import ListedColormap
 import sys
 import argparse
@@ -28,7 +29,14 @@ def save_dataframe(output_folder, df, file_name):
     df.to_csv(output_path, index=True)
     print(f"File saved to: {output_path}")
 
-def KNN_SNN(k, res, sparse_mat, emb_indx,jobs =1, SNN_prune=None):
+def save_sparsematrix(output_folder, csr_matrix, file_name):
+    # Ensure the directory exists
+    os.makedirs(output_folder, exist_ok=True)
+    output_path = os.path.join(output_folder, str(file_name))
+    sparse.save_npz(output_path, csr_matrix)
+    print(f"sparse csr matrix saved to: {output_path}")
+
+def KNN_SNN(k, res, sparse_mat, emb_indx,arguments,jobs =1, SNN_prune=None):
     print('starting KNN model')
     snn_prune_val = 1/15 if SNN_prune is None else SNN_prune
     # Compute KNN graph (on precomputed distances) 
@@ -57,6 +65,13 @@ def KNN_SNN(k, res, sparse_mat, emb_indx,jobs =1, SNN_prune=None):
             if weight >= snn_prune_val:
                 G.add_edge(i, j, weight=weight)
 
+    nodes = list(G.nodes())
+    A = nx.to_scipy_sparse_array(G, nodelist = nodes,weight='weight', format='csr')
+    print(type(A))
+
+    if arguments.save :
+        save_sparsematrix(arguments.output_dir, A, f'ArborMap_KNN_sparse_matrix_k{arguments.K}_{arguments.resolution}.npz')
+
     # Louvain clustering 
     partition = community_louvain.best_partition(G, weight='weight', resolution=res, random_state=42)
     df = pd.DataFrame.from_dict(partition, orient='index', columns=['cluster'])
@@ -80,9 +95,6 @@ def KNN_SNN(k, res, sparse_mat, emb_indx,jobs =1, SNN_prune=None):
 
         # Convert network to sparse array matrix (much faster indexing and memory demand)
         #A_np = A.values
-        nodes = list(G.nodes())
-        A = nx.to_scipy_sparse_array(G, nodelist = nodes,weight='weight', format='csr')
-        print(type(A))
         #nodes = np.array(A.index)  # numeric node labels
         node_to_pos = {node: i for i, node in enumerate(nodes)}  # map node ID → row/col index
 
@@ -161,7 +173,7 @@ def make_UMAP(sparse_mat, data_df, vmax, cmap_col, k, folder, dims, spread_n = 1
     cbar = fig.colorbar(sc, ax=ax, boundaries=np.arange(0, vmax +1) - 0.5)  
     cbar.set_ticks(np.arange(0, vmax))
     #ax.set_title(f'UMAP projection of the {proj_name} dataset using {dims} dimensions and {weights} weights at resolution of {res}', fontsize=10)
-    fig.savefig(folder + f'UMAP_k{k}_{dims}_dims_{res}_resolution.png', dpi=300, bbox_inches='tight')
+    fig.savefig(folder + f'/UMAP_k{k}_{dims}_dims_{res}_resolution.png', dpi=300, bbox_inches='tight')
     #plt.show()
     print('axist detail and returning embedding')
     x_min, x_max = ax.get_xlim()
@@ -184,6 +196,7 @@ def main():
     parser.add_argument('resolution',type =float, help = 'Resolution for louvain community detection')
     parser.add_argument('--SNN_prune',type =float, help = 'How much to prune the SNN algorithm')
     parser.add_argument("--output_dir", type=str, default="./data",help="Path to the output folder (default: ./data)")
+    parser.add_argument("--save", action="store_true",help="Save Tree model sparse matrix if --save is used")
     parser.add_argument("file_name_clusters", type=str, default="./data/louvain_KNN_SNN_clusters.csv",help="Name of output file (default: ./data/louvain_KNN_SNN_clusters.csv)")
     parser.add_argument("file_name_umap", type=str, default="./data/ArborMAP_UMAP.png",help="Name of output UMAP figure (default: ./data/ArborMAP_UMAP.png)")
 
@@ -194,7 +207,7 @@ def main():
     Embedding_data = pd.read_csv(args.reduced_obj, sep = ',', index_col=0)
     color = pd.read_csv(args.color_file, index_col= 0)
 
-    print(Embedding_data.shape)
+    print(f'Embeddeding dimensions are {Embedding_data.shape}')
     #Build ensmble tree model using RandomTreeEmbedding
     # Time the fitting process
     print('starting ensemble tree model')
@@ -208,7 +221,7 @@ def main():
     k = args.K
     res = args.resolution
 
-    df = KNN_SNN(k, res, Ajc_mtx, Embedding_data, jobs = 10)
+    df = KNN_SNN(k, res, Ajc_mtx, Embedding_data, args,jobs = 10)
     end_computation = perf_counter()
     print(f"Computation time for ensemble and knn algorithm is: {end_computation - start_computation:.4f} seconds")
 
@@ -226,5 +239,6 @@ def main():
     print(f"Computation time for UMAP is: {end_computation - start_computation:.4f} seconds")
 
     save_dataframe(args.output_dir, embedding, args.file_name_umap)
+
 if __name__ == '__main__':
     sys.exit(main())

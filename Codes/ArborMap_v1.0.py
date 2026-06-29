@@ -73,11 +73,17 @@ def KNN_SNN(k, res, sparse_mat, emb_indx,arguments,jobs =1, SNN_prune=None):
         save_sparsematrix(arguments.output_dir, A, f'ArborMap_KNN_sparse_matrix_k{arguments.K}_{arguments.resolution}.npz')
 
     # Louvain clustering 
-    partition = community_louvain.best_partition(G, weight='weight', resolution=res, random_state=42)
-    df = pd.DataFrame.from_dict(partition, orient='index', columns=['cluster'])
-    df.index.name = 'node'
-    df.reset_index(inplace=True)
-    print(df)
+    df = pd.DataFrame({'node': list(G.nodes())})
+    if arguments.try_resolutions:
+        resolutions = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+        for res in resolutions:
+            partition = community_louvain.best_partition(G, weight='weight', resolution=res, random_state=42)
+            df[f'cluster_res_{res}'] = df['node'].map(partition)
+    else:
+        partition = community_louvain.best_partition(G, weight='weight', resolution=res, random_state=42)
+        df = pd.DataFrame.from_dict(partition, orient='index', columns=['cluster'])
+        df.index.name = 'node'
+        df.reset_index(inplace=True)
 
     #Map node indices to cell IDs 
     df['cell_id'] = [emb_indx.index[i] for i in df['node']]
@@ -97,7 +103,7 @@ def KNN_SNN(k, res, sparse_mat, emb_indx,arguments,jobs =1, SNN_prune=None):
         #A_np = A.values
         #nodes = np.array(A.index)  # numeric node labels
         node_to_pos = {node: i for i, node in enumerate(nodes)}  # map node ID → row/col index
-
+        
         # Precompute cluster - node indices mapping
         cluster_to_nodes = {
             clust: df.loc[df['cluster'] == clust, 'node'].map(node_to_pos).values # type: ignore
@@ -197,6 +203,7 @@ def main():
     parser.add_argument('--SNN_prune',type =float, help = 'How much to prune the SNN algorithm')
     parser.add_argument("--output_dir", type=str, default="./data",help="Path to the output folder (default: ./data)")
     parser.add_argument("--save", action="store_true",help="Save Tree model sparse matrix if --save is used")
+    parser.add_argument("--try_resolutions", action="store_true",help="Save Tree model sparse matrix if --save is used")
     parser.add_argument("file_name_clusters", type=str, default="./data/louvain_KNN_SNN_clusters.csv",help="Name of output file (default: ./data/louvain_KNN_SNN_clusters.csv)")
     parser.add_argument("file_name_umap", type=str, default="./data/ArborMAP_UMAP.png",help="Name of output UMAP figure (default: ./data/ArborMAP_UMAP.png)")
 
@@ -233,12 +240,17 @@ def main():
     my_cmap = ListedColormap(sns.color_palette(color).as_hex()) # type: ignore
     my_cmap.colors
 
-    start_computation = perf_counter()
-    embedding = make_UMAP(Ajc_mtx, df, number, my_cmap, k, args.output_dir, dims, n_neighbors=30, res = res, jobs =12)
-    end_computation = perf_counter()
-    print(f"Computation time for UMAP is: {end_computation - start_computation:.4f} seconds")
+    #Check if the user used the try_resolutions option to test multiple resolutions
+    if args.try_resolutions:
+        print('Please select one resolution')
 
-    save_dataframe(args.output_dir, embedding, args.file_name_umap)
+    else:
+        start_computation = perf_counter()
+        embedding = make_UMAP(Ajc_mtx, df, number, my_cmap, k, args.output_dir, dims, n_neighbors=30, res = res, jobs =12)
+        end_computation = perf_counter()
+        print(f"Computation time for UMAP is: {end_computation - start_computation:.4f} seconds")
+
+        save_dataframe(args.output_dir, embedding, args.file_name_umap)
 
 if __name__ == '__main__':
     sys.exit(main())

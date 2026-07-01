@@ -73,17 +73,10 @@ def KNN_SNN(k, res, sparse_mat, emb_indx,arguments,jobs =1, SNN_prune=None):
         save_sparsematrix(arguments.output_dir, A, f'ArborMap_KNN_sparse_matrix_k{arguments.K}_{arguments.resolution}.npz')
 
     # Louvain clustering 
-    df = pd.DataFrame({'node': list(G.nodes())})
-    if arguments.try_resolutions:
-        resolutions = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
-        for res in resolutions:
-            partition = community_louvain.best_partition(G, weight='weight', resolution=res, random_state=42)
-            df[f'cluster_res_{res}'] = df['node'].map(partition)
-    else:
-        partition = community_louvain.best_partition(G, weight='weight', resolution=res, random_state=42)
-        df = pd.DataFrame.from_dict(partition, orient='index', columns=['cluster'])
-        df.index.name = 'node'
-        df.reset_index(inplace=True)
+    partition = community_louvain.best_partition(G, weight='weight', resolution=res, random_state=42)
+    df = pd.DataFrame.from_dict(partition, orient='index', columns=['cluster'])
+    df.index.name = 'node'
+    df.reset_index(inplace=True)
 
     #Map node indices to cell IDs 
     df['cell_id'] = [emb_indx.index[i] for i in df['node']]
@@ -146,6 +139,105 @@ def KNN_SNN(k, res, sparse_mat, emb_indx,arguments,jobs =1, SNN_prune=None):
     print(df.index.equals(emb_indx.index))
     return df
 
+def multiple_resolutions(sparse_mat, embedding,k, arguments, SNN_prune=None, jobs =1):
+    snn_prune_val = 1/15 if SNN_prune is None else SNN_prune
+    # Compute KNN graph (on precomputed distances) 
+    nn = NearestNeighbors(n_neighbors=k, metric='cosine', algorithm='brute', n_jobs=jobs)
+    nn.fit(sparse_mat)
+    _, indices = nn.kneighbors()
+
+    n = sparse_mat.shape[0]
+    G = nx.Graph()
+    G.add_nodes_from(range(n))
+
+    # Jaccard SNN computation (Seurat-style) 
+    print('Starting SNN computation')
+    for i in range(n):
+        neigh_i = indices[i]
+        set_i = set(neigh_i)
+        for j in neigh_i:
+            if i == j:
+                continue
+            neigh_j = indices[j]
+            shared = set_i.intersection(neigh_j)
+            if not shared:
+                continue
+            s = len(shared)
+            weight = s / (2 * k - s)
+            if weight >= snn_prune_val:
+                G.add_edge(i, j, weight=weight)
+
+    output_df = pd.DataFrame(columns=['K', 'resolution', 'cluster'])
+
+    if arguments.try_resolutions:
+    # Run Louvain clustering for multiple resolutions
+        resolutions = [0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1]
+        for res in resolutions:
+            print(f'Working on resolution {res}')
+            partition = community_louvain.best_partition(G, weight='weight', resolution=res, random_state=42)
+            df = pd.DataFrame.from_dict(partition, orient='index', columns=['cluster'])
+            df.index.name = 'node'
+            df.reset_index(inplace=True)
+
+            df['K'] = k
+            df['resolution'] = res
+            
+            # Map nodes to cell IDs
+            df['cell_id'] = [embedding.index[i] for i in df['node']]
+            df = df.set_index('cell_id').reindex(embedding.index)
+
+            # Identify singleton clusters (clusters of size 1) 
+            cluster_sizes = df['cluster'].value_counts()
+            singleton_clusters = cluster_sizes[cluster_sizes == 1].index
+            
+            if len(singleton_clusters) > 0:
+                clusters = df.loc[~df['cluster'].isin(singleton_clusters), 'cluster'].unique()
+                #A = nx.to_pandas_adjacency(G, weight='weight')
+                new_assignments = {}
+
+                # Convert network to sparse array matrix (much faster indexing and memory demand)
+                nodes = list(G.nodes())
+                A = nx.to_scipy_sparse_array(G, nodelist = nodes,weight='weight', format='csr')
+                print(type(A))
+
+                #A_np = A.values
+                #nodes = np.array(A.index)  # numeric node labels
+                node_to_pos = {node: i for i, node in enumerate(nodes)}  # map node ID → row/col index
+
+                # Precompute cluster - node indices mapping
+                cluster_to_nodes = {
+                    clust: df.loc[df['cluster'] == clust, 'node'].map(node_to_pos).values # type: ignore
+                    for clust in clusters
+                }
+
+                # For each singleton cell
+                for sing in singleton_clusters:
+                    sing_cell_index = df.index[df['cluster'] == sing][0]
+                    sing_cell_node  = df.loc[sing_cell_index, 'node']
+                    sing_pos = node_to_pos[sing_cell_node]
+
+                    # Compute mean connectivity in a vectorized way
+                    connectivity = {
+                        clust: A[sing_pos, clust_indices].mean() if len(clust_indices) > 0 else 0
+                        for clust, clust_indices in cluster_to_nodes.items()
+                    }
+                    best_cluster = max(connectivity, key=connectivity.get) # type: ignore
+                    new_assignments[sing_cell_index] = best_cluster
+                
+                # Reassign singleton cells
+                for cell, new_cluster in new_assignments.items():
+                    df.loc[cell, 'cluster'] = new_cluster
+
+            # Convert to int for downstream metrics
+            df['cluster'] = df['cluster'].astype(int)
+            
+            n_clusters = len(df['cluster'].unique())
+            
+            output_df = pd.concat([output_df, df], ignore_index=False)
+            print(f"k={k}, res={res}: {n_clusters} clusters, singleton clusters reassigned={len(singleton_clusters)}")
+    
+    return output_df
+
 def make_UMAP(sparse_mat, data_df, vmax, cmap_col, k, folder, dims, spread_n = 1, n_neighbors = 30, jobs=1, res = None):
     print('making umap')
     if spread_n != 1:
@@ -199,13 +291,13 @@ def main():
     #parser.add_argument("--Randomseed", type=int,help="Random seed for RandomTree embedding model")
     #parser.add_argument("--n_workers", type=int,help="How many workers or n_jobs to use for RandomTree embedding model")
     parser.add_argument('K',type=int, help = 'Number of nearest neighbors')
-    parser.add_argument('resolution',type =float, help = 'Resolution for louvain community detection')
+    parser.add_argument('--resolution',type =float, help = 'Resolution for louvain community detection')
     parser.add_argument('--SNN_prune',type =float, help = 'How much to prune the SNN algorithm')
     parser.add_argument("--output_dir", type=str, default="./data",help="Path to the output folder (default: ./data)")
     parser.add_argument("--save", action="store_true",help="Save Tree model sparse matrix if --save is used")
     parser.add_argument("--try_resolutions", action="store_true",help="Save Tree model sparse matrix if --save is used")
     parser.add_argument("file_name_clusters", type=str, default="./data/louvain_KNN_SNN_clusters.csv",help="Name of output file (default: ./data/louvain_KNN_SNN_clusters.csv)")
-    parser.add_argument("file_name_umap", type=str, default="./data/ArborMAP_UMAP.png",help="Name of output UMAP figure (default: ./data/ArborMAP_UMAP.png)")
+    parser.add_argument("--file_name_umap", type=str, default="./data/ArborMAP_UMAP.png",help="Name of output UMAP figure (default: ./data/ArborMAP_UMAP.png)")
 
 
     args = parser.parse_args()
@@ -228,7 +320,12 @@ def main():
     k = args.K
     res = args.resolution
 
-    df = KNN_SNN(k, res, Ajc_mtx, Embedding_data, args,jobs = 10)
+    #Check if the user used the try_resolutions option to test multiple resolutions, if so try multiple resolutions at the same K
+    if args.try_resolutions:
+        print(f'starting running K:{k} at various resolutions')
+        df = multiple_resolutions(Ajc_mtx, Embedding_data,k,args, jobs =10)
+    else:
+        df = KNN_SNN(k, res, Ajc_mtx, Embedding_data, args,jobs = 10)
     end_computation = perf_counter()
     print(f"Computation time for ensemble and knn algorithm is: {end_computation - start_computation:.4f} seconds")
 
@@ -240,7 +337,7 @@ def main():
     my_cmap = ListedColormap(sns.color_palette(color).as_hex()) # type: ignore
     my_cmap.colors
 
-    #Check if the user used the try_resolutions option to test multiple resolutions
+    #Check if the user used the try_resolutions option to test multiple resolutions before making UMAP
     if args.try_resolutions:
         print('Please select one resolution')
 

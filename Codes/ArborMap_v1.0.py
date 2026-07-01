@@ -332,16 +332,16 @@ def main():
     ## Save df to local folder
     save_dataframe(args.output_dir, df, args.file_name_clusters)
 
-    number = len(df['cluster'].unique())
-    color = color['color_codes'].head(number)
-    my_cmap = ListedColormap(sns.color_palette(color).as_hex()) # type: ignore
-    my_cmap.colors
-
     #Check if the user used the try_resolutions option to test multiple resolutions before making UMAP
     if args.try_resolutions:
         print('Please select one resolution')
 
     else:
+        number = len(df['cluster'].unique())
+        color = color['color_codes'].head(number)
+        my_cmap = ListedColormap(sns.color_palette(color).as_hex()) # type: ignore
+        my_cmap.colors
+
         start_computation = perf_counter()
         embedding = make_UMAP(Ajc_mtx, df, number, my_cmap, k, args.output_dir, dims, n_neighbors=30, res = res, jobs =12)
         end_computation = perf_counter()

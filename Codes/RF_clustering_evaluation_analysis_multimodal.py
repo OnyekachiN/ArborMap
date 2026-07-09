@@ -79,6 +79,7 @@ def select_K_res(sparse_mat, embedding_sct, embedding_adt, jobs =1,SNN_prune=Non
             singleton_clusters = cluster_sizes[cluster_sizes == 1].index
             
             if len(singleton_clusters) > 0:
+                print('reassigning singletons')
                 clusters = df.loc[~df['cluster'].isin(singleton_clusters), 'cluster'].unique()
                 #A = nx.to_pandas_adjacency(G, weight='weight')
                 new_assignments = {}
@@ -174,15 +175,17 @@ def main():
     emb_adt = pd.read_csv(args.emb_adt, sep = ',', index_col=0)
     emb_sct = pd.read_csv(args.emb_sct, sep = ',', index_col=0)
 
+    integrated_mat = pd.read_csv(args.integrated_mat, sep = ',', index_col=0)
+
     print('starting ensemble tree model')
     start_computation = perf_counter()
     rf_classifier = RandomTreesEmbedding(n_estimators= 1000, random_state = 1, n_jobs=args.jobs)
-    rf_classifier.fit(args.integrated_mat)
-    Ajc_mtx = rf_classifier.transform(args.integrated_mat)
+    rf_classifier.fit(integrated_mat)
+    Ajc_mtx = rf_classifier.transform(integrated_mat)
     print(f"Type of A: {type(Ajc_mtx)}") 
 
     # 1. Step 1, to assist in deciding on what K and resolution is best, check various k's and resolutions 
-    param_selection = select_K_res(dis_matrix, emb_sct, emb_adt, jobs =args.jobs) # type: ignore
+    param_selection = select_K_res(Ajc_mtx, emb_sct, emb_adt, jobs =args.jobs) # type: ignore
     end_computation = perf_counter()
     print(f"Computation time for ensemble and multimodal cluster evaluation algorithm is: {end_computation - start_computation:.4f} seconds")
 

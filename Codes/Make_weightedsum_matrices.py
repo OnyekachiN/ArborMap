@@ -7,7 +7,7 @@ def save_dataframe(output_folder, df, file_name):
     # Ensure the directory exists
     os.makedirs(output_folder, exist_ok=True)
     output_path = os.path.join(output_folder, str(file_name))
-    df.to_csv(output_path, index=False)
+    df.to_csv(output_path, index=True)
     print(f"File saved to: {output_path}")
 
 def main():
@@ -20,7 +20,7 @@ def main():
     parser.add_argument("file_name_clusters", type=str, default="./data/cluster_evaluation.csv",help="Name of output file (default: ./data/cluster_evaluation.csv)")
 
     args = parser.parse_args()
-    
+
     #read in embedding for sct and adt
     Embedding_data_rna = pd.read_csv(args.emb_sct, sep = ',', index_col=0)
     Embedding_data_adt = pd.read_csv(args.emb_adt, sep = ',', index_col=0)

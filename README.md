@@ -31,6 +31,14 @@ The KNN graph is converted into a Shared Nearest Neighbor (SNN) graph:
 UMAP is used for visualization of clusters.
 
 ## Installation
+# Create environment
+python3 -m venv arbormap_env
+# Activate environment
+source arbormap_env/bin/activate
+# Install dependencies and test to see that they work
+python3 -m pip install --upgrade pip
+python3 -m pip install pandas numpy scikit-learn networkx matplotlib seaborn scipy umap-learn python-louvain
+python3 -c "import pandas, sklearn, umap, community; print('All good')"
 
 ## Tutorials and documentation
 

@@ -30,4 +30,7 @@ The KNN graph is converted into a Shared Nearest Neighbor (SNN) graph:
 ### 5. UMAP Visualization
 UMAP is used for visualization of clusters.
 
+## Tutorials and documentation
+
+## FAQ
 

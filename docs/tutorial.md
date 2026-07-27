@@ -143,4 +143,54 @@ File saved to: Data/tutorial_subset_UmapEmbedding.csv
 ## Step 5: (Optional) Add cluster result to Seurat object
 The following steps show how you can add the cluster information and UMAP embedding into a Seurat object.
 ```R
+library(Seurat)
+
+# Read in object, ArborMap cluster file and ArborMap UMAP embedding file
+object = readRDS('Allen_tutorial_downsample_object.Rds')
+ArborMap_clusters = read.csv('Data/tutorial_subset_clusters.csv', header =T, row.names = 1)
+
+ArborMap_UMAP = read.csv('Data/tutorial_subset_UmapEmbedding.csv', row.names = 1)
+ArborMap_UMAP = as.matrix(ArborMap_UMAP)
+
+Idents(object)
+
+# Make show the order of cells in the  object matches the ArborMap cluster file
+match( rownames(object@meta.data), rownames(ArborMap_clusters))
+reorder_idx = match( rownames(object@meta.data), rownames(ArborMap_clusters))
+ArborMap_clusters = ArborMap_clusters[reorder_idx,]
+identical( rownames(object@meta.data), rownames(ArborMap_clusters))
+
+#Add ArborMap cluster into objects metadata
+object@meta.data$ArborMap_clusters = ArborMap_clusters$cluster
+
+Idents(object) = object@meta.data$ArborMap_clusters
+levels(object) = as.character(unique(sort(ArborMap_clusters$cluster)))
+Idents(object)
+
+# Add ArborMap UMAP embedding into objects reduction slot
+umap.dr <- CreateDimReducObject(embeddings = ArborMap_UMAP, key = "ArborMapUMAP_", assay = "RNA")
+object[["ArborMapumap"]] <- umap.dr
+```
+Next, the ArborMap results can now be visualized using the DimPlot() visualization function, demonstrated below.
+```R
+Idents(object) = object@meta.data$ArborMap_clusters
+col_number <- length(table(Idents(object)))
+my_colors <- read.csv("Data/35_color_set.csv")$color_codes[1:col_number]
+scales::show_col(my_colors)
+
+umap = DimPlot(object, 
+               reduction = 'ArborMapumap', 
+               label = FALSE, 
+               repel = TRUE, 
+               label.size = 12, 
+               cols = my_colors,
+               group.by = 'ArborMap_clusters', 
+               shuffle = TRUE,
+               raster = FALSE,
+               pt.size = 0.0001,
+               ncol =3
+               
+) + guides(color = guide_legend(override.aes = list(size = 5)))+
+  ggtitle(NULL) +
+  theme(strip.text = element_text(size = 8))
 ```

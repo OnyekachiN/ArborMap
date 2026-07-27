@@ -171,7 +171,7 @@ Idents(object)
 umap.dr <- CreateDimReducObject(embeddings = ArborMap_UMAP, key = "ArborMapUMAP_", assay = "RNA")
 object[["ArborMapumap"]] <- umap.dr
 ```
-Next, the ArborMap results can now be visualized using the DimPlot() visualization function, demonstrated below.
+Next, the ArborMap results can now be visualized in Seurat using the DimPlot() visualization function, demonstrated below.
 ```R
 Idents(object) = object@meta.data$ArborMap_clusters
 col_number <- length(table(Idents(object)))

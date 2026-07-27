@@ -44,7 +44,7 @@ options:
   --output_dir OUTPUT_DIR
                         Path to the output folder (default: ./data) (default: ./data)
 ```
-Next, an illustration of how to implement script is hown below.
+Next, an illustration of how to implement script is how below.
 ```bash
 python ScRNA_seq_Parameter_Search.py Allen_tutorial_subset.csv 12 '/RNA_Parameter_Search'  
 ```
@@ -76,4 +76,46 @@ options:
   -h, --help            show this help message and exit
   --output_dir OUTPUT_DIR
                         Path to the output folder (default: ./data) (default: ./data)
+```
+### Run complete ArborMap clustering pipeline
+Illustration of how to run complete ArborMap pipeline either after running step above or not. Start off by running script with help flag.
+```bash
+python ArborMap_v1.0.py -h  
+```
+**Expected Output**
+```text
+ArborMap clustering Tool
+
+positional arguments:
+  file                  csv file that contains the reduced cell embeddings
+  file                  csv file that contains the colors to use for umap
+  K                     Number of nearest neighbors
+  file_name_clusters    Name of output file (default: ./data/louvain_KNN_SNN_clusters.csv)
+
+options:
+  -h, --help            show this help message and exit
+  --n_workers N_WORKERS
+                        How many workers or n_jobs to use for RandomTree embedding and KNN algorithmn model (default: None)
+  --resolution RESOLUTION
+                        Resolution for louvain community detection (default: None)
+  --SNN_prune SNN_PRUNE
+                        How much to prune the SNN algorithm (default: None)
+  --output_dir OUTPUT_DIR
+                        Path to the output folder (default: ./data) (default: ./data)
+  --save                Save Tree model sparse matrix if --save is used (default: False)
+  --try_resolutions     Try multiple resolutions using one K value --save is used (default: False)y multiple resolutions using one K value --save is used (default: False)
+
+```
+Next, an illustration of how to run complete ArborMap pipeline shown below
+```bash
+python ArborMap_v1.0.py \
+Data/Allen_tutorial_subset.csv \
+Data/35_color_set.csv \
+--n_workers 12 \
+100 \
+--resolution 0.5 \
+--output_dir 'Data/' \
+tutorial_subset_clusters.csv \
+--file_name_umap tutorial_subset_UmapEmbedding.csv \
+--save  
 ```

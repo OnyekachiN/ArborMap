@@ -57,7 +57,69 @@ starting KNN algorithm
 Working on k 20
 Building SNN graph
 ```
-### Run complete ArborMap clustering pipeline for unimodal single-cell data
+### Workflow for multimodal single-cell data
+You may use our custom multimodal integration script to integrate assays available in your single-cell datasets. Run the script with help flag to see usage f
+
+```bash
+Python Make_weightedsum_matrices.py -h
+```
+**Expected Output**
+```text
+ArborMAP weighted integration module
+
+positional arguments:
+  file                  csv file with RNA reduced cell embeddings
+  file                  csv file with ADT reduced cell embeddings
+  weight_rna            weight assigned to multimodal assay
+  weight_adt            weighte assigned to multimodal assay
+  file_name_integrated  Name of output integrated file (default: ./data/multimodal_assay_integration.csv)
+
+options:
+  -h, --help            show this help message and exit
+  --output_dir OUTPUT_DIR
+                        Path to the output folder (default: ./data) (default: ./data)
+```
+Next, an illustration of how to implement script is shown below.
+```bash
+python Make_weightedsum_matrices.py \
+Data/Multimodal/multimodal_tutorial_subset_sct.csv \
+Data/Multimodal/multimodal_tutorial_subset_adt.csv \
+0.1 \
+0.9 \
+--output_dir '/Data/Multimodal/' \
+tutorial_weighted_matrix.csv  
+```
+Similarly for multimodal data, you can run the parameter selection step to help you choose clustering parameters, this step is optional. Use the help flag to see usage for multimodal data
+```bash
+python Multimodal_Parameter_Search.py -h
+```
+**Expected Output**
+```text
+ArborMap Parameter Search(CITE-seq)
+
+positional arguments:
+  file                  csv file with RNA reduced cell embeddings
+  file                  csv file with ADT reduced cell embeddings
+  file                  weighted integrated multimodal matrix
+  jobs                  The number of jobs or workers to run for the KNN and ensemble tree algorithms
+  file_name_clusters    Name of output file (default: ./data/cluster_evaluation.csv)
+
+options:
+  -h, --help            show this help message and exit
+  --output_dir OUTPUT_DIR
+                        Path to the output folder (default: ./data) (default: ./data)
+```
+Next, to run multimodal parameter script, see demonstration below.
+```bash
+python Codes/RF_clustering_evaluation_analysis_multimodal.py \
+Data/Multimodal/multimodal_tutorial_subset_sct.csv \
+Data/Multimodal/multimodal_tutorial_subset_adt.csv \
+Data/Multimodal/tutorial_weighted_matrix.csv \
+12 \
+--output_dir '/Data/Multimodal/' \
+Multimodal_parameter_search.csv
+```
+### Run complete ArborMap clustering pipeline 
 Illustration of how to run complete ArborMap pipeline either after running step above or not. Start off by running script with help flag.
 ```bash
 python ArborMap_v1.0.py -h  
@@ -119,30 +181,6 @@ axist detail and returning embedding
  y min = -10.249425792694092, y max = 21.603423976898192
 Computation time for UMAP is: 284.9648 seconds
 File saved to: Data/tutorial_subset_UmapEmbedding.csv
-```
-### Workflow for multimodal single-cell data
-Similarly for multimodal data, you can run the parameter selection step to help you choose clustering parameters, this step is optional. Run the script with help flag to see usage for multimodal data
-```bash
-python Multimodal_Parameter_Search.py -h
-```
-**Expected Output**
-```text
-ArborMap Parameter Search(CITE-seq)
-
-positional arguments:
-  file                  csv file with ADT reduced cell embeddings
-  file                  csv file with RNA reduced cell embeddings
-  file                  weighted integrated multimodal matrix
-  jobs                  The number of jobs or workers to run for the KNN and ensemble tree algorithms
-  file_name_clusters    Name of output file (default: ./data/cluster_evaluation.csv)
-
-options:
-  -h, --help            show this help message and exit
-  --output_dir OUTPUT_DIR
-                        Path to the output folder (default: ./data) (default: ./data)
-```
-Next, an illustration of how to implement script is shown below.
-```bash
 ```
 ## Step 5: (Optional) Add cluster result to Seurat object
 The following steps show how you can add the cluster information and UMAP embedding into a Seurat object.

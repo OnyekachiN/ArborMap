@@ -41,6 +41,6 @@ python3 -m pip install pandas numpy scikit-learn networkx matplotlib seaborn sci
 python3 -c "import pandas, sklearn, umap, community; print('All good')"
 
 ## Tutorials and documentation
-
+Please check out the [tutorials](docs/tutorial.md) for detailed instructions on how to use ArborMap.
 ## FAQ
 

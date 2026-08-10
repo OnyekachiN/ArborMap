@@ -24,7 +24,18 @@ Install the required packages listed in the `requirements.txt` file using `pip`
 ```bash
 pip install -r requirements.txt
 ```
-## Step 4: Run ArborMap tool
+## Step 4: Obtain Dimensionality Reduced or Batch Corrected Embeddings
+```R
+## How to get dimensionality-reduced cell embeddings 
+Dim_reduced_embeddings = seurat_obj@reductions$pca@cell.embeddings
+
+## How to get batch corrected cell embeddings
+Batch_embeddings       = seurat_obj@reductions$batch_correction@cell.embeddings
+
+## Save dimensionality-reduced or batch corrected cell embeddings
+write.csv(Dim_reduced_embeddings, 'Allen_tutorial_subset.csv')
+```
+## Step 5: Run ArborMap Tool
 ### Workflow for unimodal single-cell data
 You can run the parameter selection step to help you choose clustering parameters, this step is optional.
 Run the script with help flag to see usage for scRNA-seq.
@@ -182,7 +193,7 @@ axist detail and returning embedding
 Computation time for UMAP is: 284.9648 seconds
 File saved to: Data/tutorial_subset_UmapEmbedding.csv
 ```
-## Step 5: (Optional) Add cluster result to Seurat object
+## Step 6: (Optional) Add Cluster Result to Seurat Object
 The following steps show how you can add the cluster information and UMAP embedding into a Seurat object.
 ```R
 library(Seurat)

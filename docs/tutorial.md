@@ -64,12 +64,12 @@ dim_reduced_embeddings <- seurat_obj@reductions$pca@cell.embeddings
 batch_embeddings <- seurat_obj@reductions$batch_correction@cell.embeddings
 
 ## Export embeddings to CSV
-write.csv(dim_reduced_embeddings, "Allen_tutorial_subset.csv", row.names = TRUE)
+write.csv(dim_reduced_embeddings, "tutorial_cellEmbeddings.csv", row.names = TRUE)
 ```
 ## Step 5: Run ArborMap Tool
 ### Workflow for unimodal single-cell data
 You can run the parameter selection step to help you choose clustering parameters, this step is optional.
-Run the script with help flag to see usage for scRNA-seq.
+Run the script with help flag to see usage for scRNA-seq or unimodal analysis.
  ```bash
 python ScRNA_seq_Parameter_Search.py -h
 ```
@@ -89,7 +89,12 @@ options:
 ```
 Next, an illustration of how to implement script is shown below.
 ```bash
-python ScRNA_seq_Parameter_Search.py Allen_tutorial_subset.csv 12 '/RNA_Parameter_Search'  
+python ScRNA_seq_Parameter_Search.py \
+tutorial_cellEmbeddings.csv \
+12 \
+-- output_dir '/Data' \
+'Unimodal_Parameter_Search.csv'
+
 ```
 **Expected Output**
 ```text
@@ -100,7 +105,7 @@ Working on k 20
 Building SNN graph
 ```
 ### Workflow for multimodal single-cell data
-You may use our custom multimodal integration script to integrate assays available in your single-cell datasets. Run the script with help flag to see usage f
+You may use our custom multimodal integration script to integrate assays available in your single-cell datasets. Run the script with help flag to see usage for multimodal assay integration.
 
 ```bash
 Python Make_weightedsum_matrices.py -h
@@ -124,14 +129,14 @@ options:
 Next, an illustration of how to implement script is shown below.
 ```bash
 python Make_weightedsum_matrices.py \
-Data/Multimodal/multimodal_tutorial_subset_sct.csv \
-Data/Multimodal/multimodal_tutorial_subset_adt.csv \
+Data/multimodal_tutorial_subset_sct.csv \
+Data/multimodal_tutorial_subset_adt.csv \
 0.1 \
 0.9 \
---output_dir '/Data/Multimodal/' \
+--output_dir '/Data' \
 tutorial_weighted_matrix.csv  
 ```
-Similarly for multimodal data, you can run the parameter selection step to help you choose clustering parameters, this step is optional. Use the help flag to see usage for multimodal data
+Similarly, for multimodal data, you can run the parameter selection step on your integrated multimodal cell embedding matrix to help you choose clustering parameters, this step is optional. Use the help flag to see usage for multimodal data.
 ```bash
 python Multimodal_Parameter_Search.py -h
 ```
@@ -154,11 +159,11 @@ options:
 Next, to run multimodal parameter script, see demonstration below.
 ```bash
 python Codes/RF_clustering_evaluation_analysis_multimodal.py \
-Data/Multimodal/multimodal_tutorial_subset_sct.csv \
-Data/Multimodal/multimodal_tutorial_subset_adt.csv \
-Data/Multimodal/tutorial_weighted_matrix.csv \
+Data/multimodal_tutorial_subset_sct.csv \
+Data/multimodal_tutorial_subset_adt.csv \
+Data/tutorial_weighted_matrix.csv \
 12 \
---output_dir '/Data/Multimodal/' \
+--output_dir '/Data' \
 Multimodal_parameter_search.csv
 ```
 ### Run complete ArborMap clustering pipeline 

@@ -25,15 +25,46 @@ Install the required packages listed in the `requirements.txt` file using `pip`
 pip install -r requirements.txt
 ```
 ## Step 4: Obtain Dimensionality Reduced or Batch Corrected Embeddings
+### Download Tutorial Data
+
+Create a `Data/` directory and download the required tutorial Seurat object and color palette CSV file using either `wget` or `curl`:
+
+```bash
+# Create directory and navigate into it
+mkdir -p Data
+cd Data
+
+# --- Option A: Using 'wget' ---
+wget [https://github.com/your-username/your-repo/releases/download/v0.1.0/tutorial_object.rds](https://github.com/your-username/your-repo/releases/download/v0.1.0/tutorial_object.rds)
+wget [https://github.com/your-username/your-repo/releases/download/v0.1.0/35_color_set.csv](https://github.com/your-username/your-repo/releases/download/v0.1.0/35_color_set.csv)
+
+# --- Option B: Using 'curl' ---
+# curl -L -O [https://github.com/your-username/your-repo/releases/download/v0.1.0/tutorial_object.rds](https://github.com/your-username/your-repo/releases/download/v0.1.0/tutorial_object.rds)
+# curl -L -O [https://github.com/your-username/your-repo/releases/download/v0.1.0/35_color_set.csv](https://github.com/your-username/your-repo/releases/download/v0.1.0/35_color_set.csv)
+```
+
+---
+
+### Load Data and Extract Embeddings in R
+
 ```R
-## How to get dimensionality-reduced cell embeddings 
-Dim_reduced_embeddings = seurat_obj@reductions$pca@cell.embeddings
+library(Seurat)
 
-## How to get batch corrected cell embeddings
-Batch_embeddings       = seurat_obj@reductions$batch_correction@cell.embeddings
+## Option 1: Read the locally downloaded file (Recommended)
+seurat_obj <- readRDS("Data/tutorial_object.rds")
 
-## Save dimensionality-reduced or batch corrected cell embeddings
-write.csv(Dim_reduced_embeddings, 'Allen_tutorial_subset.csv')
+## Option 2: Alternatively, read directly from the GitHub Release URL
+# data_url <- "[https://github.com/your-username/your-repo/releases/download/v0.1.0/tutorial_object.rds](https://github.com/your-username/your-repo/releases/download/v0.1.0/tutorial_object.rds)"
+# seurat_obj <- readRDS(url(data_url))
+
+## Extract dimensionality-reduced cell embeddings (PCA)
+dim_reduced_embeddings <- seurat_obj@reductions$pca@cell.embeddings
+
+## Extract batch-corrected cell embeddings
+batch_embeddings <- seurat_obj@reductions$batch_correction@cell.embeddings
+
+## Export embeddings to CSV
+write.csv(dim_reduced_embeddings, "Allen_tutorial_subset.csv", row.names = TRUE)
 ```
 ## Step 5: Run ArborMap Tool
 ### Workflow for unimodal single-cell data

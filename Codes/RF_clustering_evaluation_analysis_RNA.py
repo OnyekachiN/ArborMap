@@ -22,7 +22,7 @@ def save_dataframe(output_folder, df, file_name):
 def select_K_res(sparse_mat, embedding,jobs =1, SNN_prune=None):
     print('starting KNN algorithm')
     output_df = pd.DataFrame(columns=['K', 'resolution', 'Number_of_clusters','CH_score','Silhouette'])
-    K_list = [230, 240, 250, 260, 270, 280, 290, 300, 310, 320]
+    K_list = [20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120]
     
     for k in K_list:
         print(f'Working on k {k}')
@@ -129,8 +129,8 @@ def select_K_res(sparse_mat, embedding,jobs =1, SNN_prune=None):
     return output_df
 
 def main():
-    parser = argparse.ArgumentParser(description='COMMOT pipeline',formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('reduced_obj', metavar='file', help='csv file that contains the pca reduced cell embeddings')
+    parser = argparse.ArgumentParser(description='ArborMap Parameter Search(ScRNA-seq)',formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('reduced_obj', metavar='file', help='csv file that contains the pca or integrated reduced cell embeddings')
     parser.add_argument('jobs', type=int, help='The number of jobs or workers to run for the KNN and ensemble tree algorithms')
     #parser.add_argument('min_sample_split',type =int, help = 'The minimum number of samples required to split an internal node', default=2)
     parser.add_argument("--output_dir", type=str, default="./data",help="Path to the output folder (default: ./data)")

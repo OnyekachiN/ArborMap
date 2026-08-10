@@ -35,12 +35,12 @@ mkdir -p Data
 cd Data
 
 # --- Option A: Using 'wget' ---
-wget [https://github.com/your-username/your-repo/releases/download/v0.1.0/tutorial_object.rds](https://github.com/your-username/your-repo/releases/download/v0.1.0/tutorial_object.rds)
-wget [https://github.com/your-username/your-repo/releases/download/v0.1.0/35_color_set.csv](https://github.com/your-username/your-repo/releases/download/v0.1.0/35_color_set.csv)
+wget [https://github.com/OnyekachiN/ArborMap/releases/download/v0.1.0/tutorial_object.rds](https://github.com/OnyekachiN/ArborMap/releases/download/v0.1.0/tutorial_object.rds)
+wget [https://github.com/OnyekachiN/ArborMap/releases/download/v0.1.0/35_color_set.csv](https://github.com/OnyekachiN/ArborMap/releases/download/v0.1.0/35_color_set.csv)
 
 # --- Option B: Using 'curl' ---
-# curl -L -O [https://github.com/your-username/your-repo/releases/download/v0.1.0/tutorial_object.rds](https://github.com/your-username/your-repo/releases/download/v0.1.0/tutorial_object.rds)
-# curl -L -O [https://github.com/your-username/your-repo/releases/download/v0.1.0/35_color_set.csv](https://github.com/your-username/your-repo/releases/download/v0.1.0/35_color_set.csv)
+# curl -L -O [https://github.com/OnyekachiN/ArborMap/releases/download/v0.1.0/tutorial_object.rds](https://github.com/your-username/your-repo/releases/download/v0.1.0/tutorial_object.rds)
+# curl -L -O [https://github.com/OnyekachiN/ArborMap/releases/download/v0.1.0/35_color_set.csv](https://github.com/your-username/your-repo/releases/download/v0.1.0/35_color_set.csv)
 ```
 
 ---

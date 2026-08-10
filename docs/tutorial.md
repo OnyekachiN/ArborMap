@@ -89,7 +89,7 @@ options:
 ```
 Next, an illustration of how to implement script is shown below.
 ```bash
-python ScRNA_seq_Parameter_Search.py \
+python clustering_evaluation_unimodal.py \
 tutorial_cellEmbeddings.csv \
 12 \
 -- output_dir '/Data' \
@@ -138,7 +138,7 @@ tutorial_weighted_matrix.csv
 ```
 Similarly, for multimodal data, you can run the parameter selection step on your integrated multimodal cell embedding matrix to help you choose clustering parameters, this step is optional. Use the help flag to see usage for multimodal data.
 ```bash
-python Multimodal_Parameter_Search.py -h
+python clustering_evaluation_multimodal.py -h
 ```
 **Expected Output**
 ```text
@@ -156,9 +156,9 @@ options:
   --output_dir OUTPUT_DIR
                         Path to the output folder (default: ./data) (default: ./data)
 ```
-Next, to run multimodal parameter script, see demonstration below.
+Next, to run multimodal parameter search script, see demonstration below.
 ```bash
-python Codes/RF_clustering_evaluation_analysis_multimodal.py \
+python Codes/clustering_evaluation_multimodal.py \
 Data/multimodal_tutorial_subset_sct.csv \
 Data/multimodal_tutorial_subset_adt.csv \
 Data/tutorial_weighted_matrix.csv \
@@ -211,7 +211,7 @@ tutorial_subset_clusters.csv \
 ```
 **Expected Output**
 ```text
-Embeddeding dimensions are (10000, 20)
+Embeddeding dimensions are (1500, 20)
 starting ensemble tree model
 starting KNN model
 Starting SNN computation

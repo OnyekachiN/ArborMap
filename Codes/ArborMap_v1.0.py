@@ -238,15 +238,15 @@ def multiple_resolutions(sparse_mat, embedding,k, arguments, SNN_prune=None, job
     
     return output_df
 
-def make_UMAP(sparse_mat, data_df, vmax, cmap_col, k, folder, dims, spread_n = 1, n_neighbors = 30, jobs=1, res = None):
+def make_UMAP(sparse_mat, data_df, vmax, cmap_col, k, folder, dims, spread_n = 1, n_neighbors = 30, jobs=1,res=None):
     print('making umap')
     if spread_n != 1:
         spread_n = spread_n
     if n_neighbors !=30:
         n_neighbors = n_neighbors
     if res is not None:
-        res = res
-    #plot UMAP
+            res = res
+   
     reducer = umap.UMAP(n_neighbors=n_neighbors,        
         min_dist=0.3,          
         metric='cosine',       
@@ -258,6 +258,7 @@ def make_UMAP(sparse_mat, data_df, vmax, cmap_col, k, folder, dims, spread_n = 1
     embedding = reducer.fit_transform(sparse_mat)
     embedding.shape # type: ignore
     
+
     fig, ax = plt.subplots(figsize=(10, 8)) 
     sc = ax.scatter(
         embedding[:, 0], # type: ignore
@@ -284,20 +285,21 @@ def make_UMAP(sparse_mat, data_df, vmax, cmap_col, k, folder, dims, spread_n = 1
     return embedding
 
 def main():
-    parser = argparse.ArgumentParser(description='Ensemble tree sparse matrix and graph network construction',formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(description='ArborMap clustering Tool',formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('reduced_obj', metavar='file', help='csv file that contains the reduced cell embeddings')
     parser.add_argument('color_file', metavar='file', help='csv file that contains the colors to use for umap')
     #parser.add_argument("--n_trees", type=int,help="The number of trees or n_estimators to use for the RandomTree Embedding model")
     #parser.add_argument("--Randomseed", type=int,help="Random seed for RandomTree embedding model")
-    #parser.add_argument("--n_workers", type=int,help="How many workers or n_jobs to use for RandomTree embedding model")
+    parser.add_argument("--n_workers", type=int,help="How many workers or n_jobs to use for RandomTree embedding and KNN algorithmn model", default=0)
     parser.add_argument('K',type=int, help = 'Number of nearest neighbors')
     parser.add_argument('--resolution',type =float, help = 'Resolution for louvain community detection')
     parser.add_argument('--SNN_prune',type =float, help = 'How much to prune the SNN algorithm')
     parser.add_argument("--output_dir", type=str, default="./data",help="Path to the output folder (default: ./data)")
     parser.add_argument("--save", action="store_true",help="Save Tree model sparse matrix if --save is used")
-    parser.add_argument("--try_resolutions", action="store_true",help="Save Tree model sparse matrix if --save is used")
+    parser.add_argument("--try_resolutions", action="store_true",help="Try multiple resolutions using one K value --save is used")
     parser.add_argument("file_name_clusters", type=str, default="./data/louvain_KNN_SNN_clusters.csv",help="Name of output file (default: ./data/louvain_KNN_SNN_clusters.csv)")
-    parser.add_argument("--file_name_umap", type=str, default="./data/ArborMAP_UMAP.png",help="Name of output UMAP figure (default: ./data/ArborMAP_UMAP.png)")
+    parser.add_argument("--run_UMAP", action="store_true",help= "Option to compute UMAP embedding and plot figure")
+    parser.add_argument("--file_name_umap", type=str, default="./data/ArborMAP_UMAP.csv",help="Name of output UMAP embedding file")
 
 
     args = parser.parse_args()
@@ -319,13 +321,14 @@ def main():
     dims = Embedding_data.shape[1]
     k = args.K
     res = args.resolution
+    jobs = args.n_workers
 
     #Check if the user used the try_resolutions option to test multiple resolutions, if so try multiple resolutions at the same K
     if args.try_resolutions:
         print(f'starting running K:{k} at various resolutions')
-        df = multiple_resolutions(Ajc_mtx, Embedding_data,k,args, jobs =10)
+        df = multiple_resolutions(Ajc_mtx, Embedding_data,k,args, jobs =jobs)
     else:
-        df = KNN_SNN(k, res, Ajc_mtx, Embedding_data, args,jobs = 10)
+        df = KNN_SNN(k, res, Ajc_mtx, Embedding_data, args,jobs = jobs)
     end_computation = perf_counter()
     print(f"Computation time for ensemble and knn algorithm is: {end_computation - start_computation:.4f} seconds")
 
@@ -333,21 +336,25 @@ def main():
     save_dataframe(args.output_dir, df, args.file_name_clusters)
 
     #Check if the user used the try_resolutions option to test multiple resolutions before making UMAP
-    if args.try_resolutions:
+    if args.try_resolutions :
         print('Please select one resolution')
 
-    else:
+    # Check if the user was to compute UMAP embeddings and visualizations 
+    if args.run_UMAP:
         number = len(df['cluster'].unique())
         color = color['color_codes'].head(number)
         my_cmap = ListedColormap(sns.color_palette(color).as_hex()) # type: ignore
         my_cmap.colors
 
         start_computation = perf_counter()
-        embedding = make_UMAP(Ajc_mtx, df, number, my_cmap, k, args.output_dir, dims, n_neighbors=30, res = res, jobs =12)
+        embedding = make_UMAP(Ajc_mtx, df,number, my_cmap, k, args.output_dir, dims, n_neighbors=30, res =res,jobs =jobs)
         end_computation = perf_counter()
         print(f"Computation time for UMAP is: {end_computation - start_computation:.4f} seconds")
-
         save_dataframe(args.output_dir, embedding, args.file_name_umap)
+
+    else:
+        print('ArborMap cluster identification is complete!')
+   
 
 if __name__ == '__main__':
     sys.exit(main())

@@ -167,7 +167,7 @@ Data/tutorial_weighted_matrix.csv \
 Multimodal_parameter_search.csv
 ```
 ### Run complete ArborMap clustering pipeline 
-Illustration of how to run complete ArborMap pipeline either after running step above or not. Start off by running script with help flag. 
+Illustration of how to run complete ArborMap pipeline either after running step above or not. Start off by running script with help flag.   
 Keep in mind that using the --save (saving KNN object) and --run_UMAP (running and plotting UMAP) flags may significantly increase execution time, depending on the size of your dataset.
 ```bash
 python ArborMap_v1.0.py -h  

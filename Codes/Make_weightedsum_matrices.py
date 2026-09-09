@@ -11,13 +11,13 @@ def save_dataframe(output_folder, df, file_name):
     print(f"File saved to: {output_path}")
 
 def main():
-    parser = argparse.ArgumentParser(description='Custom weighted integration module',formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('emb_sct', metavar='file', help='csv file with ADT reduced cell embeddings')
-    parser.add_argument('emb_adt', metavar = 'file', help = 'csv file with RNA reduced cell embeddings')
-    parser.add_argument('weight_rna', nargs='+',type = float, help = 'weighted integrated multimodal matrix')
-    parser.add_argument('weight_adt', nargs ='+',type = float, help = 'weighted integrated multimodal matrix')
+    parser = argparse.ArgumentParser(description='ArborMAP weighted integration module',formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('emb_sct', metavar='file', help='csv file with RNA reduced cell embeddings')
+    parser.add_argument('emb_adt', metavar = 'file', help = 'csv file with ADT reduced cell embeddings')
+    parser.add_argument('weight_rna', nargs='+',type = float, help = 'weight assigned to multimodal assay')
+    parser.add_argument('weight_adt', nargs ='+',type = float, help = 'weighte assigned to multimodal assay')
     parser.add_argument("--output_dir", type=str, default="./data",help="Path to the output folder (default: ./data)")
-    parser.add_argument("file_name_clusters", type=str, default="./data/cluster_evaluation.csv",help="Name of output file (default: ./data/cluster_evaluation.csv)")
+    parser.add_argument("file_name_integrated", type=str, default="./data/multimodal_assay_integration.csv",help="Name of output integrated file (default: ./data/multimodal_assay_integration.csv)")
 
     args = parser.parse_args()
 
@@ -42,7 +42,7 @@ def main():
 
     for i in range(len(weights_rna)):
         weighted_sum_distances = Embedding_data_rna *weights_rna[i] + Embedding_data_adt*weights_adt[i]
-        save_dataframe(args.output_dir, weighted_sum_distances, args.file_name_clusters)
+        save_dataframe(args.output_dir, weighted_sum_distances, args.file_name_integrated)
 
 if __name__ == '__main__':
     sys.exit(main())

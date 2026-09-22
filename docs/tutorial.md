@@ -167,7 +167,8 @@ Data/tutorial_weighted_matrix.csv \
 Multimodal_parameter_search.csv
 ```
 ### Run complete ArborMap clustering pipeline 
-Illustration of how to run complete ArborMap pipeline either after running step above or not. Start off by running script with help flag.
+Illustration of how to run complete ArborMap pipeline either after running step above or not. Start off by running script with help flag.   
+Keep in mind that using the --save (saving KNN object) and --run_UMAP (running and plotting UMAP) flags may significantly increase execution time, depending on the size of your dataset.
 ```bash
 python ArborMap_v1.0.py -h  
 ```
@@ -193,6 +194,7 @@ options:
                         Path to the output folder (default: ./data) (default: ./data)
   --save                Save Tree model sparse matrix if --save is used (default: False)
   --try_resolutions     Try multiple resolutions using one K value --save is used (default: False)
+  --run_UMAP            Option to compute UMAP embedding and plot figure (default: False)
   --file_name_umap FILE_NAME_UMAP
                         Name of output UMAP embedding file (default: ./data/ArborMAP_UMAP.csv)
 ```
@@ -207,7 +209,8 @@ Data/35_color_set.csv \
 --output_dir 'Data/' \
 tutorial_subset_clusters.csv \
 --file_name_umap tutorial_subset_UmapEmbedding.csv \
---save  
+--save
+--run_UMAP
 ```
 **Expected Output**
 ```text
